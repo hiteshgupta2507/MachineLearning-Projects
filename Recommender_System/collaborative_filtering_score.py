@@ -1,0 +1,56 @@
+
+# coding: utf-8
+
+# In[14]:
+
+
+import argparse
+import json
+import numpy as np
+
+from compute_similarity_score import pearson_score
+
+def build_arg_parse():
+    parser = argparse.ArgumentParser(description = "Find users who are similar to the input user")
+    parser.add_argument('--user1', dest = 'user', required = True, help = 'Input user')
+    return parser
+
+
+# In[15]:
+
+
+# Finds users in the dataset that are similar to the input user
+def find_similar_users(dataset, user, num_users):
+    if user not in dataset:
+        raise TypeError('Cannot find ' + user + ' in the dataset')
+    
+    # Compute Pearson score between inout user and all the users in the dataset
+    scores = np.array([[x, pearson_score(dataset, user, x)] for x in dataset if x != user])
+    
+    # Sort the scores in decreasing order
+    scores_sorted = np.argsort(scores[:, 1])[::-1]
+
+    # Extract the top 'num_users' scores
+    top_users = scores_sorted[:num_users]
+    return scores[top_users]
+
+
+# In[16]:
+
+
+if __name__ == '__main__':
+    args = build_arg_parse().parse_args()
+    user = args.user
+    
+    rating_file = 'ratings.json'
+    
+    with open(rating_file, 'r') as f:
+        data = json.loads(f.read())
+        
+    print('\n Users similar to ' + user + ':\n')
+    similar_users = find_similar_users(data, user, 3)
+    print('User\t\t\tSimilarity Score')
+    print('_'*41)
+    for item in similar_users:
+        print(item[0], '\t\t', round(float(item[1]), 2))
+
